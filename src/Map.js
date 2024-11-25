@@ -6,26 +6,50 @@ import L from 'leaflet'; // importation de leaflet pour personnaliser les icône
 
 const Map = () => {
   const [cinemas, setCinemas] = useState([]); // déclaration d'un state pour stocker les cinémas récupérés
+  const [userLocation, setUserLocation] = useState(null); // Pour stocker la position de l'utilisateur
 
   useEffect(() => {
-    // utilisation d'axios pour récupérer les données de l'api
-    axios.get('http://localhost:3001/cinemas') // requête vers l'api
+    // Récupération de la position de l'utilisateur
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.error("Erreur de géolocalisation : ", error);
+        }
+      );
+    } else {
+      console.log("La géolocalisation n'est pas supportée par ce navigateur.");
+    }
+
+    // Récupération des cinémas depuis l'API
+    axios.get('http://localhost:3001/cinemas')
       .then(response => {
-        // si la requête réussit
-        setCinemas(response.data); // mise à jour du state avec les données
+        setCinemas(response.data);
       })
       .catch(error => {
-        // si une erreur se produit
-        console.error('erreur lors de la récupération des cinémas:', error);
+        console.error('Erreur lors de la récupération des cinémas:', error);
       });
-  }, []); // le tableau vide [] signifie que l'effet ne sera exécuté qu'une seule fois lors du montage du composant
+  }, []);
 
-  // création d'une icône personnalisée pour les marqueurs
+  // Icône personnalisée pour les marqueurs des cinémas
   const customIcon = new L.Icon({
     iconUrl: '/images/my-icon.png',  // chemin vers l'image de l'icône
     iconSize: [30, 30],  // taille de l'icône
-    iconAnchor: [15, 30],  // point d'ancrage de l'icône (pour que l'icône soit bien centrée)
+    iconAnchor: [15, 30],  // point d'ancrage de l'icône
     popupAnchor: [0, -30],  // position du popup par rapport à l'icône
+  });
+
+  // Icône pour la position de l'utilisateur 
+  const userIcon = new L.Icon({
+    iconUrl: '/images/target-icon.png',  // chemin vers l'image de la cible
+    iconSize: [40, 40],  // taille de l'icône de la cible
+    iconAnchor: [20, 40],  // ancrage centré au bas de l'icône
+    popupAnchor: [0, -30],  // position du popup
   });
 
   return (
@@ -56,8 +80,19 @@ const Map = () => {
           </Popup>
         </Marker>
       ))}
+      {/* Marker pour la position de l'utilisateur */}
+      {userLocation && (
+        <Marker 
+          position={[userLocation.latitude, userLocation.longitude]} 
+          icon={userIcon} // icône cible
+        >
+          <Popup>
+            <strong>Vous êtes ici</strong>
+          </Popup>
+        </Marker>
+      )}
     </MapContainer>
   );
 };
 
-export default Map;  
+export default Map;
