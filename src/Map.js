@@ -1,78 +1,74 @@
-import React, { useEffect, useState } from 'react'; // importation de React et des hooks
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'; // composants nécessaires pour la carte
-import axios from 'axios'; // bibliothèque pour les requêtes API
-import 'leaflet/dist/leaflet.css'; // style pour Leaflet
-import L from 'leaflet'; // bibliothèque Leaflet pour personnaliser les icônes
+// src/Map.js
+import React, { useEffect, useState } from "react";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import axios from "axios";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+import { auth } from "./firebase-config"; // Importer l'authentification Firebase
+import { onAuthStateChanged } from "firebase/auth"; // Pour écouter les changements de l'état d'authentification
 
 const Map = () => {
-  const [cinemas, setCinemas] = useState([]); // état pour stocker les cinémas
-  const [userLocation, setUserLocation] = useState(null); // état pour la position de l'utilisateur
-  const [map, setMap] = useState(null); // état pour l'objet de la carte
+  const [cinemas, setCinemas] = useState([]); 
+  const [userLocation, setUserLocation] = useState(null); 
+  const [map, setMap] = useState(null);
+  const [user, setUser] = useState(null); // Utilisateur connecté
+  const [favorites, setFavorites] = useState([]); // Cinémas favoris
 
   useEffect(() => {
-    // Récupérer la position de l'utilisateur en temps réel
-    if (navigator.geolocation) {
-      navigator.geolocation.watchPosition(
-        (position) => {
-          setUserLocation({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          });
-
-          if (map) {
-            // Centrer la carte sur la position de l'utilisateur
-            map.setView([position.coords.latitude, position.coords.longitude], map.getZoom());
-          }
-        },
-        (error) => {
-          console.error("Erreur de géolocalisation : ", error);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 5000,
-          maximumAge: 0,
-        }
-      );
-    }
+    // Vérifier si un utilisateur est connecté
+    onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
 
     // Récupérer les cinémas depuis l'API
-    axios.get('http://localhost:3000/api/cinemas') 
-      .then(response => {
+    axios
+      .get("http://localhost:3000/api/cinemas")
+      .then((response) => {
         setCinemas(response.data);
       })
-      .catch(error => {
-        console.error('Erreur lors de la récupération des cinémas :', error);
+      .catch((error) => {
+        console.error("Erreur lors de la récupération des cinémas :", error);
       });
-  }, [map]);
+  }, []);
+
+  // Ajouter un cinéma aux favoris
+  const addToFavorites = (cinema) => {
+    if (user) {
+      setFavorites([...favorites, cinema]);
+      localStorage.setItem("favorites", JSON.stringify([...favorites, cinema])); // Sauvegarder dans localStorage
+    } else {
+      alert("Vous devez être connecté pour ajouter aux favoris.");
+    }
+  };
 
   // Définir les icônes en fonction du type de cinéma
   const getIcon = (type) => {
     const icons = {
       ugc: new L.Icon({
-        iconUrl: '/images/ugc-logo.png',
+        iconUrl: "/images/ugc-logo.png",
         iconSize: [30, 30],
         iconAnchor: [15, 30],
         popupAnchor: [0, -30],
       }),
       mk2: new L.Icon({
-        iconUrl: '/images/mk2-logo.png',
+        iconUrl: "/images/mk2-logo.png",
         iconSize: [30, 30],
         iconAnchor: [15, 30],
         popupAnchor: [0, -30],
       }),
       independent: new L.Icon({
-        iconUrl: '/images/heart-icon.png',
+        iconUrl: "/images/heart-icon.png",
         iconSize: [25, 25],
         iconAnchor: [15, 30],
         popupAnchor: [0, -30],
       }),
     };
-    return icons[type] || icons.independent; // par défaut, utiliser l'icône indépendante
+    return icons[type] || icons.independent;
   };
 
   // Icône pour la position de l'utilisateur
   const userIcon = new L.Icon({
-    iconUrl: '/images/target-icon.png', // Icône pour l'utilisateur
+    iconUrl: "/images/target-icon.png",
     iconSize: [40, 40],
     iconAnchor: [20, 40],
     popupAnchor: [0, -30],
@@ -81,40 +77,38 @@ const Map = () => {
   return (
     <div className="map-container">
       <MapContainer
-        center={[48.8566, 2.3522]} // Position initiale de la carte
+        center={[48.8566, 2.3522]} 
         zoom={12}
-        style={{ height: '100vh', width: '100%' }}
-        whenCreated={setMap} // Cette fonction permet de récupérer l'objet de la carte
+        style={{ height: "100vh", width: "100%" }}
+        whenCreated={setMap}
       >
-        {/* Couche OpenStreetMap */}
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution="&copy; OpenStreetMap contributors"
         />
-        
-        {/* Afficher les cinémas */}
-        {cinemas.map(cinema => (
+
+        {cinemas.map((cinema) => (
           <Marker
-            key={cinema.id} // Utiliser un ID unique pour chaque marqueur
-            position={[cinema.latitude, cinema.longitude]} // Position du cinéma
-            icon={getIcon(cinema.type)} // Icône basée sur le type
+            key={cinema.id}
+            position={[cinema.latitude, cinema.longitude]}
+            icon={getIcon(cinema.type)}
           >
-            <Popup className="cinema-popup">
+            <Popup>
               <div>
                 <strong>{cinema.name}</strong><br />
                 {cinema.address}
+                <br />
+                <button onClick={() => addToFavorites(cinema)}>
+                  Ajouter aux favoris
+                </button>
               </div>
             </Popup>
           </Marker>
         ))}
-        
-        {/* Marqueur pour la position de l'utilisateur */}
+
         {userLocation && (
-          <Marker
-            position={[userLocation.latitude, userLocation.longitude]}
-            icon={userIcon}
-          >
-            <Popup className="user-popup">
+          <Marker position={[userLocation.latitude, userLocation.longitude]} icon={userIcon}>
+            <Popup>
               <strong>Vous êtes ici</strong>
             </Popup>
           </Marker>
