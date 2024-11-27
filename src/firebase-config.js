@@ -1,16 +1,17 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
-// Configuration Firebase
+// Configuration Firebase avec les variables d'environnement
 const firebaseConfig = {
-  apiKey: "AIzaSyBJFof0QpVtP-jUuT4eVGgnmfZR3fS_8fk",
-  authDomain: "cinemap-8032e.firebaseapp.com",
-  projectId: "cinemap-8032e",
-  storageBucket: "cinemap-8032e.appspot.com",  
-  messagingSenderId: "636280767932",
-  appId: "1:636280767932:web:9d618eb846f92ce5bf97b9",
-  measurementId: "G-KTZSKZ4V8W"
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID,
+  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
 };
+
 
 // Initialisation de Firebase
 const app = initializeApp(firebaseConfig);
