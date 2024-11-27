@@ -1,15 +1,13 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import axios from 'axios';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
-import 'leaflet-routing-machine';
+import React, { useEffect, useState } from 'react'; // importation de React et des hooks
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'; // composants nécessaires pour la carte
+import axios from 'axios'; // bibliothèque pour les requêtes API
+import 'leaflet/dist/leaflet.css'; // style pour Leaflet
+import L from 'leaflet'; // bibliothèque Leaflet pour personnaliser les icônes
 
 const Map = () => {
-  const [cinemas, setCinemas] = useState([]);
-  const [userLocation, setUserLocation] = useState(null);
-  const [map, setMap] = useState(null);
-  const [routeControl, setRouteControl] = useState(null); // Stocke l'itinéraire
+  const [cinemas, setCinemas] = useState([]); // état pour stocker les cinémas
+  const [userLocation, setUserLocation] = useState(null); // état pour la position de l'utilisateur
+  const [map, setMap] = useState(null); // état pour l'objet de la carte
 
   useEffect(() => {
     // Récupérer la position de l'utilisateur en temps réel
@@ -69,85 +67,60 @@ const Map = () => {
         popupAnchor: [0, -30],
       }),
     };
-    return icons[type] || icons.independent; 
+    return icons[type] || icons.independent; // par défaut, utiliser l'icône indépendante
   };
 
   // Icône pour la position de l'utilisateur
   const userIcon = new L.Icon({
-    iconUrl: '/images/target-icon.png',
+    iconUrl: '/images/target-icon.png', // Icône pour l'utilisateur
     iconSize: [40, 40],
     iconAnchor: [20, 40],
     popupAnchor: [0, -30],
   });
 
-  // Fonction pour calculer l'itinéraire vers le cinéma sélectionné
-  const calculateRoute = (cinema) => {
-    if (userLocation && map) {
-      const userLatLng = L.latLng(userLocation.latitude, userLocation.longitude);
-      const cinemaLatLng = L.latLng(cinema.latitude, cinema.longitude);
-
-      if (routeControl) {
-        map.removeControl(routeControl); // Supprimer l'ancien itinéraire avant d'en ajouter un nouveau
-      }
-
-      // Créer et ajouter le contrôle de routage sur la carte
-      const newRouteControl = L.Routing.control({
-        waypoints: [userLatLng, cinemaLatLng],
-        routeWhileDragging: true,
-      }).addTo(map);
-
-      // Mettre à jour l'état avec le nouveau contrôle de routage
-      setRouteControl(newRouteControl);
-    }
-  };
-
   return (
-    <MapContainer
-      center={[48.8566, 2.3522]} 
-      zoom={12}
-      style={{ height: '100vh', width: '100%' }}
-      whenCreated={(mapInstance) => setMap(mapInstance)}
-    >
-      {/* Couche OpenStreetMap */}
-      <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution="&copy; OpenStreetMap contributors"
-      />
-      
-      {/* Afficher les cinémas */}
-      {cinemas.map(cinema => (
-        <Marker
-          key={cinema.id}
-          position={[cinema.latitude, cinema.longitude]}
-          icon={getIcon(cinema.type)}
-        >
-          <Popup>
-            <div style={{
-              backgroundColor: 'white',
-              padding: '10px',
-              borderRadius: '5px',
-              boxShadow: '0 2px 5px rgba(0,0,0,0.15)',
-            }}>
-              <strong>{cinema.name}</strong><br />
-              {cinema.address}
-              <br />
-              <button onClick={() => calculateRoute(cinema)}>Calculer l'itinéraire</button>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
-      {/* Marqueur pour la position de l'utilisateur */}
-      {userLocation && (
-        <Marker
-          position={[userLocation.latitude, userLocation.longitude]}
-          icon={userIcon}
-        >
-          <Popup>
-            <strong>Vous êtes ici</strong>
-          </Popup>
-        </Marker>
-      )}
-    </MapContainer>
+    <div className="map-container">
+      <MapContainer
+        center={[48.8566, 2.3522]} // Position initiale de la carte
+        zoom={12}
+        style={{ height: '100vh', width: '100%' }}
+        whenCreated={setMap} // Cette fonction permet de récupérer l'objet de la carte
+      >
+        {/* Couche OpenStreetMap */}
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution="&copy; OpenStreetMap contributors"
+        />
+        
+        {/* Afficher les cinémas */}
+        {cinemas.map(cinema => (
+          <Marker
+            key={cinema.id} // Utiliser un ID unique pour chaque marqueur
+            position={[cinema.latitude, cinema.longitude]} // Position du cinéma
+            icon={getIcon(cinema.type)} // Icône basée sur le type
+          >
+            <Popup className="cinema-popup">
+              <div>
+                <strong>{cinema.name}</strong><br />
+                {cinema.address}
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+        
+        {/* Marqueur pour la position de l'utilisateur */}
+        {userLocation && (
+          <Marker
+            position={[userLocation.latitude, userLocation.longitude]}
+            icon={userIcon}
+          >
+            <Popup className="user-popup">
+              <strong>Vous êtes ici</strong>
+            </Popup>
+          </Marker>
+        )}
+      </MapContainer>
+    </div>
   );
 };
 
